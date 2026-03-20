@@ -1,4 +1,4 @@
-import { HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, HttpException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
 
@@ -11,7 +11,10 @@ export class AuthService {
             private jwt : JwtService
     ){}
     async register (dto : {email: string , password : string}){
-            try{ const createUser = await this.user.create(dto)
+                 
+            try{   const hashPassword = await bcrypt.hash(dto.password, 10)
+                
+                const createUser = await this.user.createUser( { email : dto.email ,  password : hashPassword})
         
               const payload = { sub : createUser.id , email : createUser.email}
               const acessToken = await this.jwt.signAsync(payload , {expiresIn : '15m'});
@@ -23,13 +26,13 @@ export class AuthService {
                }}
                catch(error){
                 console.log('invalid info' , error)
-                throw new NotFoundException('bad request')
+                throw new BadRequestException('bad request')
                }
          }
     async logIn(dto : {email : string , password : string }){
         try{
             const dbUser = await this.user.findByEmail(dto.email);
-            if(!dbUser) { throw new UnauthorizedException('Invalid Credentials')}
+            if(!dbUser) { throw new NotFoundException('Invalid Credentials')}
           const   isMatch =  await bcrypt.compare(dto.password , dbUser.password)
            if(!isMatch) { throw new UnauthorizedException('incorrect password')}
              const payload = { sub : dbUser.id , email : dbUser.email}
@@ -43,7 +46,7 @@ export class AuthService {
         }
         catch(error){
             console.log('failed to authorize user',error)
-            throw new NotFoundException('bad request , failed to authorize')
+            throw new BadRequestException('bad request , failed to authorize')
         }
     }
     
@@ -65,7 +68,7 @@ export class AuthService {
         }
         catch(error){
             console.log(error)
-            throw new  UnauthorizedException(' failed to refreshToken')
+            throw new  BadRequestException(' failed to refreshToken')
         }
     }
 

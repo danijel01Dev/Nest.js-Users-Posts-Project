@@ -18,14 +18,14 @@ export class UsersService {
     data: { refreshToken: hashedToken },
   });
 }
-  async create(createUserDto: CreateUserDto) {
-    try{ const hashpass = await bcrypt.hash(createUserDto.password, 10)
-       const dbUser =  await this.db.users.create({ data: {
+  async createUser(createUserDto: CreateUserDto) {
+    try{ 
+      return await this.db.users.create({ data: {
        email : createUserDto.email,
-       password : hashpass,
+       password : createUserDto.password
     }})
        
-         return dbUser}
+       }
     catch(error){
       console.log('error user at line 12', error)
       throw new NotFoundException(' invalid request failed to create user')
